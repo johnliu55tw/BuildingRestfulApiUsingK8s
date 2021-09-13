@@ -37,13 +37,17 @@ spec:
             description: TodoSpec defines the desired state of Todo
             properties:
               complete:
+                description: Whether this todo item is marked complete
                 type: boolean
               notifyAt:
+                description: When to send out the notification
                 format: date-time
                 type: string
               notifyEmail:
+                description: The email address to notify
                 type: string
               summary:
+                description: Summary of the todo item
                 type: string
             required:
             - complete
@@ -53,9 +57,7 @@ spec:
             description: TodoStatus defines the observed state of Todo
             properties:
               notifiedAt:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                  of cluster Important: Run "make" to regenerate code after modifying
-                  this file'
+                description: When is the todo being notified
                 format: date-time
                 type: string
             type: object
