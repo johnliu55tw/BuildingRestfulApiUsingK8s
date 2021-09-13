@@ -52,13 +52,12 @@ spec:
           status:
             description: TodoStatus defines the observed state of Todo
             properties:
-              notified:
+              notifiedAt:
                 description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
                   of cluster Important: Run "make" to regenerate code after modifying
                   this file'
-                type: boolean
-            required:
-            - notified
+                format: date-time
+                type: string
             type: object
         type: object
     served: true

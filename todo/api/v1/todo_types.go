@@ -25,20 +25,24 @@ import (
 
 // TodoSpec defines the desired state of Todo
 type TodoSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Summary of the todo item
+	Summary string `json:"summary"`
 
-	Summary     string       `json:"summary"`
-	Complete    bool         `json:"complete"`
-	NotifyEmail string       `json:"notifyEmail,omitempty"`
-	NotifyAt    *metav1.Time `json:"notifyAt,omitempty"`
+	// Whether this todo item is marked complete
+	Complete bool `json:"complete"`
+
+	// The email address to notify
+	NotifyEmail string `json:"notifyEmail,omitempty"`
+
+	// When to send out the notification
+	NotifyAt *metav1.Time `json:"notifyAt,omitempty"`
 }
 
 // TodoStatus defines the observed state of Todo
 type TodoStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	Notified bool `json:"notified"`
+
+	// When is the todo being notified
+	NotifiedAt *metav1.Time `json:"notifiedAt,omitempty"`
 }
 
 //+kubebuilder:object:root=true
