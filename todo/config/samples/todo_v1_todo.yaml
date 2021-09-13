@@ -4,4 +4,7 @@ metadata:
   name: todo-sample
 spec:
   # Add fields here
-  foo: bar
+  summary: "Buy some milk"
+  complete: false
+  notifyEmail: "john.liu@suse.com"
+  notifyAt: "2021-09-13T14:00:00+08:00"

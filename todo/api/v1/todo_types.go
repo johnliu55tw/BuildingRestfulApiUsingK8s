@@ -28,14 +28,17 @@ type TodoSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Todo. Edit todo_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Summary     string       `json:"summary"`
+	Complete    bool         `json:"complete"`
+	NotifyEmail string       `json:"notifyEmail,omitempty"`
+	NotifyAt    *metav1.Time `json:"notifyAt,omitempty"`
 }
 
 // TodoStatus defines the observed state of Todo
 type TodoStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Notified bool `json:"notified"`
 }
 
 //+kubebuilder:object:root=true
