@@ -1,0 +1,7 @@
+apiVersion: todo.johnliu55.tw/v1
+kind: Todo
+metadata:
+  name: todo-sample
+spec:
+  # Add fields here
+  foo: bar

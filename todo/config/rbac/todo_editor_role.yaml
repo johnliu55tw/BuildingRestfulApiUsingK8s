@@ -1,0 +1,24 @@
+# permissions for end users to edit todoes.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: todo-editor-role
+rules:
+- apiGroups:
+  - todo.johnliu55.tw
+  resources:
+  - todoes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - todo.johnliu55.tw
+  resources:
+  - todoes/status
+  verbs:
+  - get

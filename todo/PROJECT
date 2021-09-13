@@ -3,4 +3,14 @@ layout:
 - go.kubebuilder.io/v3
 projectName: todo
 repo: johnliu55.tw/todo
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: johnliu55.tw
+  group: todo
+  kind: Todo
+  path: johnliu55.tw/todo/api/v1
+  version: v1
 version: "3"
