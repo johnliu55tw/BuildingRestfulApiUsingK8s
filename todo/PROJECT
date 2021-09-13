@@ -1,0 +1,6 @@
+domain: johnliu55.tw
+layout:
+- go.kubebuilder.io/v3
+projectName: todo
+repo: johnliu55.tw/todo
+version: "3"
