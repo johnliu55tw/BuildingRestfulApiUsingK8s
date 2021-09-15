@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	batchv1 "k8s.io/api/batch/v1"
@@ -30,6 +31,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	todov1 "johnliu55.tw/todo/api/v1"
+)
+
+var (
+	scheduledTimeAnnotation = "todo.johnliu55.tw/scheduled-at"
+	jobOwnerKey             = ".metadata.controller"
+	apiGVStr                = todov1.GroupVersion.String()
 )
 
 // TodoReconciler reconciles a Todo object
@@ -67,8 +74,79 @@ func (r *TodoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 	logger.V(1).Info("Todo loaded", "todo", todo)
 
-	// TEST CREATE JOB
-	job, err := constructNotificationJob(&todo, time.Now())
+	/* 2. Update status from notification Job */
+	// Get jobs using labels
+	var notiJobs batchv1.JobList
+	if err := r.List(
+		ctx,
+		&notiJobs,
+		client.InNamespace(req.Namespace),
+		client.MatchingLabels{"todo": req.Name}); err != nil {
+
+		logger.Error(err, "unable to list child Jobs")
+		return ctrl.Result{}, err
+	}
+	logger.V(1).Info(fmt.Sprintf("Children jobs: %d", len(notiJobs.Items)))
+
+	// If the todo has children jobs, update NotifiedAt if any of it completed.
+	// If still running, return and wait for it to complete.
+	for _, j := range notiJobs.Items {
+		for idx, cond := range j.Status.Conditions {
+			logger.V(1).Info(fmt.Sprintf("Cond %d type: %s", idx, cond.Type))
+			switch cond.Type {
+			case batchv1.JobComplete:
+				logger.V(1).Info("Job completed!")
+				todo.Status.NotifiedAt = cond.LastTransitionTime.DeepCopy()
+				if err := r.Status().Update(ctx, &todo); err != nil {
+					logger.Error(err, "Unable to update todo status")
+					return ctrl.Result{}, err
+				}
+				return ctrl.Result{}, nil
+			case batchv1.JobFailed:
+				//TODO JOB FAILED! We should create a Job sometimes after
+				logger.V(1).Info("Job failed!")
+				return ctrl.Result{}, nil
+			}
+		}
+		//XXX No conditions means the job is still running, so don't do anything
+		logger.V(1).Info("Job still running...")
+		return ctrl.Result{}, nil
+	}
+
+	/* 3. Create notify job*/
+	// assert len(notiJobs.Items) == 0
+	if todo.Spec.NotifyAt != nil {
+		duraUntilScheduled := time.Until(todo.Spec.NotifyAt.Time)
+		logger.V(1).Info(fmt.Sprintf("Duration until scheduled: %f mins", duraUntilScheduled.Minutes()))
+		//TODO: Fix the constant here
+		if duraUntilScheduled.Minutes() < -1.0 {
+			logger.V(1).Info(fmt.Sprintf("SCHEDULE IN THE PAST: %v", todo.Spec.NotifyAt.Time))
+			return ctrl.Result{}, nil
+		}
+
+		if math.Abs(duraUntilScheduled.Minutes()) < 1 {
+			logger.V(1).Info("Within 1 mins, create notification job")
+			job, err := r.constructNotificationJob(&todo)
+			logger.V(1).Info("Job created", "job", job)
+			if err != nil {
+				logger.Error(err, "failed to create job from todo item")
+				return ctrl.Result{}, nil
+			}
+
+			if err := r.Create(ctx, job); err != nil {
+				logger.Error(err, "unable to create Job for CronJob", "job", job)
+				return ctrl.Result{}, err
+			}
+			logger.V(1).Info("Notification job created")
+			return ctrl.Result{}, nil
+		}
+
+		logger.V(1).Info(fmt.Sprintf("Schedule to run after %v mins", duraUntilScheduled.Minutes()))
+		return ctrl.Result{RequeueAfter: duraUntilScheduled}, nil
+	}
+
+	/* TEST CREATE JOB
+	job, err := r.constructNotificationJob(&todo, time.Now())
 	logger.V(1).Info("Job created", "job", job)
 	if err != nil {
 		logger.Error(err, "failed to create job from todo item")
@@ -80,8 +158,7 @@ func (r *TodoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, err
 	}
 	logger.V(1).Info("Notification job created")
-
-	/* 2. Update status from notification Job */
+	*/
 
 	return ctrl.Result{}, nil
 }
@@ -90,12 +167,13 @@ func (r *TodoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 func (r *TodoReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&todov1.Todo{}).
+		Owns(&batchv1.Job{}).
 		Complete(r)
 }
 
-func constructNotificationJob(todo *todov1.Todo, scheduledTime time.Time) (*batchv1.Job, error) {
+func (r *TodoReconciler) constructNotificationJob(todo *todov1.Todo) (*batchv1.Job, error) {
 	// We want job names for a given nominal start time to have a deterministic name to avoid the same job being created twice
-	name := fmt.Sprintf("%s-%d", todo.Name, scheduledTime.Unix())
+	name := fmt.Sprintf("%s-%d", todo.Name, time.Now().Unix())
 
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -112,7 +190,7 @@ func constructNotificationJob(todo *todov1.Todo, scheduledTime time.Time) (*batc
 							Name:  fmt.Sprintf("%s-notify", name),
 							Image: "busybox",
 							Command: []string{"/bin/sh", "-c",
-								fmt.Sprintf("echo 'This is notification for %s'", todo.Spec.NotifyEmail),
+								fmt.Sprintf("sleep 10; echo 'This is notification for %s'", todo.Spec.NotifyEmail),
 							},
 						},
 					},
@@ -120,6 +198,11 @@ func constructNotificationJob(todo *todov1.Todo, scheduledTime time.Time) (*batc
 				},
 			},
 		},
+	}
+
+	job.Labels["todo"] = todo.Name
+	if err := ctrl.SetControllerReference(todo, job, r.Scheme); err != nil {
+		return nil, err
 	}
 	return job, nil
 }
