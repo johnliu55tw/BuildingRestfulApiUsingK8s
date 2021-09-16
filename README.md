@@ -34,8 +34,6 @@ type TodoStatus struct {
 
 ## Update config sample
 
-> TODO: Optinal fields?
-
 1. Edit `todo/config/samples/todo_v1_todo.yaml`
 2. Test it:
     ```
@@ -56,5 +54,3 @@ State Machine
 - Notifying
 - Notified
 - ERROR!!!
-
-## Webhook for validation
