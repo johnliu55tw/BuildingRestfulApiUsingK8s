@@ -47,7 +47,7 @@ spec:
                 description: The email address to notify
                 type: string
               summary:
-                description: Summary of the todo item
+                description: TODO optional fields Summary of the todo item
                 type: string
             required:
             - complete
