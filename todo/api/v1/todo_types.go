@@ -25,6 +25,7 @@ import (
 
 // TodoSpec defines the desired state of Todo
 type TodoSpec struct {
+	//TODO optional fields
 	// Summary of the todo item
 	Summary string `json:"summary"`
 
@@ -32,9 +33,11 @@ type TodoSpec struct {
 	Complete bool `json:"complete"`
 
 	// The email address to notify
+	// +optional
 	NotifyEmail string `json:"notifyEmail,omitempty"`
 
 	// When to send out the notification
+	// +optional
 	NotifyAt *metav1.Time `json:"notifyAt,omitempty"`
 }
 
