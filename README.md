@@ -54,3 +54,6 @@ State Machine
 - Notifying
 - Notified
 - ERROR!!!
+
+### Determine states
+![](./todo_state_machine.svg)
