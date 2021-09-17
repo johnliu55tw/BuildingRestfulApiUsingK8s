@@ -130,6 +130,7 @@ func (r *TodoReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	state, err := r.determineCurrentState(ctx, todo, notiJob)
 	if err != nil {
 		logger.V(1).Error(err, "Error determining state")
+		return ctrl.Result{}, err
 	}
 	logger.V(1).Info(fmt.Sprintf("Current state: %s", state))
 
